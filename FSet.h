@@ -20,7 +20,7 @@ struct FSetNode
 	FSetNode(){
 		this->ok = true;
 	}
-	FSetNode(unordered_map<int,int> &m_map,bool ok ) {
+	FSetNode(unordered_map<int,int> m_map,bool ok ) {
         this->map = m_map;
         this->ok = ok;
     }
