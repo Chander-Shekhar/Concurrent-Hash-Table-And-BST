@@ -10,7 +10,7 @@ struct FSetOp{
 	OPType type;
 	int key;
 	int value;
-	int resp; // we will add different types of responses
+	int resp; // we will add different types of responses 0 ==> error, 1 ==> new key and value added, 2==> new value added 
 };
 
 struct FSetNode
