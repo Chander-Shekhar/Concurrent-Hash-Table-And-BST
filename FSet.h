@@ -1,39 +1,46 @@
 #include<unordered_map>
 #include<atomic>
 using namespace std;
+
 enum OPType{
 	INS,
 	REM
 };
 
-struct FSetOp{
+struct FSetOP{
 	OPType type;
 	int key;
 	int value;
 	int resp; // we will add different types of responses 0 ==> error, 1 ==> new key and value added, 2==> new value added 
+
+	bool getResponse() {
+		return resp;
+	}
 };
 
-struct FSetNode
+template<typename T>
+class FSetNode
 {
-	unordered_map<int,int> map;
+	unordered_map<T,T> map;
 	bool ok;
 	FSetNode(){
 		this->ok = true;
 	}
-	FSetNode(unordered_map<int,int> m_map,bool ok ) {
+	FSetNode(unordered_map<T,T> m_map,bool ok ) {
         this->map = m_map;
         this->ok = ok;
     }
 };
 
+template<typename T>
 class FSet{
 private:
-	atomic<FSetNode*>node;
+	atomic<FSetNode<T>*>node;
 public:
-	unordered_map<int,int> freeze(){
-		FSetNode* o = node.load(memory_order_seq_cst);
+	unordered_map<T,T> freeze(){
+		FSetNode<T>* o = node.load(memory_order_seq_cst);
 		while(o->ok){
-			FSetNode *n= new FSetNode(o->map,false);
+			FSetNode<T> *n= new FSetNode<T>(o->map,false);
 			if(node.compare_exchange_strong(o,n))
 				break;
 			o=node.load(memory_order_seq_cst);
@@ -41,10 +48,10 @@ public:
 		return o->map;
 	}
 
-	bool invoke(FSetOp op){
-		FSetNode* o = node.load(memory_order_seq_cst);
+	bool invoke(FSetOP op){
+		FSetNode<T>* o = node.load(memory_order_seq_cst);
 		while(o->ok){
-			unordered_map<int,int> map;
+			unordered_map<T,T> map;
 			int resp;
 			if(op.type==INS){
 				if(o->map.find(op.key)==o->map.end()){
@@ -70,7 +77,7 @@ public:
 					resp=1;
 				}
 			}
-			FSetNode* n=new FSetNode(map,true);
+			FSetNode<T>* n=new FSetNode<T>(map,true);
 			if(node.compare_exchange_strong(o,n)){
 				op.resp=resp;
 				return true;
@@ -80,9 +87,13 @@ public:
 		return false;
 	}
 
-	bool hasMember(int k){
-		FSetNode* o = node.load(memory_order_seq_cst);
+	bool hasMember(T k){
+		FSetNode<T>* o = node.load(memory_order_seq_cst);
 		return o->map.find(k)!=o->map.end();
 	}
+
+    FSetNode<T> *getHead() {
+        return node.load();
+    }
 
 };
