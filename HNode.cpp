@@ -27,7 +27,7 @@ public:
     }
 };
 
-template<typename T,S>
+template<typename T,typename S>
 class HashTable {
 private:
     atomic<HNode<T,S>*> head;
