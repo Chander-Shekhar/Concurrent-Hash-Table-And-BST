@@ -42,7 +42,7 @@ private:
                 if(type == INS)
                     t->used++;
             }
-            else if(type == REM and curr_bucket->getHead()->map.size() == 1)
+            else if(type == REM and curr_bucket->getHead()->map->size() == 1)
                 t->used--;
             if(curr_bucket->invoke(op))
                 return op->getResponse();
@@ -66,7 +66,7 @@ private:
     FSet<T,S> *initBucket(HNode<T,S> *t, int i) {
         FSet<T,S> *b = t->buckets[i].load(memory_order_seq_cst);
         FSet<T,S> *m;
-        unordered_map<T,S> new_set;
+        unordered_map<T,S> *new_set;
         HNode<T,S> *s = t->pred;
         if(!b and s) {
             if(t->size == s->size*2) {
@@ -74,7 +74,7 @@ private:
                 unordered_map<T,S> set_1 = m->freeze();
                 for(auto itr : set_1) {
                     if(itr.first % t->size == i)
-                        new_set.insert(itr);
+                        new_set->insert(itr);
                 }
             }
             else {
@@ -82,9 +82,9 @@ private:
                 FSet<T,S> *n = s->buckets[i+t->size];
                 unordered_map<T,S> set_1 = m->freeze(), set_2 = n->freeze(); 
                 for(auto itr : set_1)
-                    new_set.insert(itr);
+                    new_set->insert(itr);
                 for(auto itr : set_2)
-                    new_set.insert(itr);
+                    new_set->insert(itr);
             }
             FSet<T,S> *b_dash = new FSet<T,S>(new_set, true);
             // Confused if it should be in a loop
@@ -94,7 +94,7 @@ private:
     }
 public:
     HashTable() {
-        atomic<FSet<T,S>*> init = new atomic<FSet<T,S>*>[1];
+        // atomic<FSet<T,S>*> init = new atomic<FSet<T,S>*>[1];
         head.store(new HNode<T,S>(new atomic<FSet<T,S>*>[1], 1, nullptr));
         head.load(memory_order_seq_cst)->buckets[0].store(new FSet<T,S>(new unordered_map<T,S>(), true));
     }
