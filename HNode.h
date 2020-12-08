@@ -71,7 +71,7 @@ private:
         if(!b and s) {
             if(t->size == s->size*2) {
                 m = s->buckets[i % s->size].load(memory_order_seq_cst);
-                unordered_map<T,S> set_1 = m->freeze();
+                unordered_map<T,S> set_1 = *m->freeze();
                 for(auto itr : set_1) {
                     if(itr.first % t->size == i)
                         new_set->insert(itr);
@@ -80,7 +80,7 @@ private:
             else {
                 m = s->buckets[i];
                 FSet<T,S> *n = s->buckets[i+t->size];
-                unordered_map<T,S> set_1 = m->freeze(), set_2 = n->freeze(); 
+                unordered_map<T,S> set_1 = *m->freeze(), set_2 = *n->freeze(); 
                 for(auto itr : set_1)
                     new_set->insert(itr);
                 for(auto itr : set_2)
@@ -88,7 +88,8 @@ private:
             }
             FSet<T,S> *b_dash = new FSet<T,S>(new_set, true);
             // Confused if it should be in a loop
-            t->buckets[i].compare_exchange_strong(nullptr, b_dash);
+            FSet<T,S> *nil = nullptr;
+            t->buckets[i].compare_exchange_strong(nil, b_dash);
         }
         return t->buckets[i];
     }

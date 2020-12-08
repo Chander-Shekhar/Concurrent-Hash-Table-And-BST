@@ -86,7 +86,7 @@ public:
 					resp=1;
 				}
 			}
-			FSetNode<T,S>* n=new FSetNode<T,S>(map,true);
+			FSetNode<T,S>* n=new FSetNode<T,S>(&map,true);
 			if(node.compare_exchange_strong(o,n)){
 				op->resp=resp;
 				return true;
