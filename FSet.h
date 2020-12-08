@@ -49,7 +49,7 @@ public:
 		return o->map;
 	}
 
-	bool invoke(FSetOP op){
+	bool invoke(FSetOP<T,S> op){
 		FSetNode<T,S>* o = node.load(memory_order_seq_cst);
 		while(o->ok){
 			unordered_map<T,S> map;

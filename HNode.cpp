@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <atomic>
-#include <FSet.h>
+#include "FSet.h"
 using namespace std;
 
 template<typename T,typename S>
@@ -33,7 +33,7 @@ private:
     atomic<HNode<T,S>*> head;
 
     bool apply(OPType type, T key, S value) {
-        FSetOP *op = new FSetOP(type, key, value);
+        FSetOP<T,S> *op = new FSetOP<T,S>(type, key, value);
         while(true) {
             HNode<T,S> *t = head.load(memory_order_seq_cst);
             FSet<T,S> *curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);
@@ -125,5 +125,4 @@ public:
         }
         return curr_bucket->hasMember(key);
     }
-
 };
