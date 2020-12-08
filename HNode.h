@@ -10,21 +10,21 @@ public:
     atomic<FSet<T,S>*> *buckets;
     int size, used;
     HNode<T,S> *pred;
-    HNode(int capacity) {
+    HNode(int capacity, HNode<T,S> *pred) {
         buckets = new atomic<FSet<T,S>*>[capacity];
         for(int i=0;i<capacity;i++)
             buckets[i].store(nullptr);
         size = capacity;
-        pred = nullptr;
-        used = 0;
-    }
-    HNode(atomic<FSet<T,S>*> *buckets, int capacity, HNode<T,S> *pred) {
-        // throw error if buckets.size != capacity
-        this->buckets = buckets;
-        this->size = capacity;
         this->pred = pred;
         used = 0;
     }
+    // HNode(atomic<FSet<T,S>*> *buckets, int capacity, HNode<T,S> *pred) {
+    //     // throw error if buckets.size != capacity
+    //     this->buckets = buckets;
+    //     this->size = capacity;
+    //     this->pred = pred;
+    //     used = 0;
+    // }
 };
 
 template<typename T,typename S>
@@ -57,8 +57,8 @@ private:
             initBucket(t, i);
         t->pred = nullptr;
         int size = grow ? t->size*2 :t->size/2;
-        atomic<FSet<T,S>*> *buckets = new atomic<FSet<T,S>*>[size];
-        HNode<T,S> *t_dash = new HNode<T,S>(buckets, size, t);
+        // atomic<FSet<T,S>*> *buckets = new atomic<FSet<T,S>*>[size];
+        HNode<T,S> *t_dash = new HNode<T,S>(size, t);
         // Confused if it should be in a loop
         head.compare_exchange_strong(t, t_dash);
     }
@@ -96,20 +96,22 @@ private:
 public:
     HashTable() {
         // atomic<FSet<T,S>*> init = new atomic<FSet<T,S>*>[1];
-        head.store(new HNode<T,S>(new atomic<FSet<T,S>*>[1], 1, nullptr));
-        head.load(memory_order_seq_cst)->buckets[0].store(new FSet<T,S>(new unordered_map<T,S>(), true));
+        head.store(new HNode<T,S>(1, nullptr));
+        // head.load(memory_order_seq_cst)->buckets[0].store(new FSet<T,S>(new unordered_map<T,S>(), true));
     }
 
     bool insert(T key, S value) {
         bool resp = apply(INS, key, value);
-        if(head.load()->used >= head.load()->size/2)
+        HNode<T,S> *t = head.load(memory_order_seq_cst);
+        if(t->used >= t->size/2)
             resize(true);
         return resp;
     }
 
     bool remove(T key, S value) {
         bool resp = apply(REM, key, value);
-        if(head.load()->used < head.load()->size/2)
+        HNode<T,S> *t = head.load(memory_order_seq_cst);
+        if(t->used < t->size/2)
             resize(false);
         return resp;
     }
