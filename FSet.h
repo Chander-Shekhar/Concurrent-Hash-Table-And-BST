@@ -64,15 +64,15 @@ public:
 			int resp;
 			if(op->type==INS){
 				if(o->map->find(op->key)==o->map->end()){
-					map=o->map;
+					map=*(o->map);
 					map[op->key]=op->value;
 					resp=1;
 				}
 				else{
-					if(op->value==o->map[op->key])
+					if(op->value==o->map->at(op->key))
 						resp=0;
 					else{
-						map=o->map;
+						map=*(o->map);
 						map[op->key]=op->value;
 						resp=2;
 					}
