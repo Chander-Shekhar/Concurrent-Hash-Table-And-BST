@@ -66,9 +66,9 @@ private:
     FSet<T,S> *initBucket(HNode<T,S> *t, int i) {
         FSet<T,S> *b = t->buckets[i].load(memory_order_seq_cst);
         FSet<T,S> *m;
-        unordered_map<T,S> *new_set;
         HNode<T,S> *s = t->pred;
         if(!b and s) {
+            unordered_map<T,S> *new_set = new unordered_map<T,S>();
             if(t->size == s->size*2) {
                 m = s->buckets[i % s->size].load(memory_order_seq_cst);
                 unordered_map<T,S> set_1 = *m->freeze();
@@ -97,13 +97,13 @@ public:
     HashTable() {
         // atomic<FSet<T,S>*> init = new atomic<FSet<T,S>*>[1];
         head.store(new HNode<T,S>(1, nullptr));
-        // head.load(memory_order_seq_cst)->buckets[0].store(new FSet<T,S>(new unordered_map<T,S>(), true));
+        head.load(memory_order_seq_cst)->buckets[0].store(new FSet<T,S>(new unordered_map<T,S>(), true));
     }
 
     bool insert(T key, S value) {
         bool resp = apply(INS, key, value);
         HNode<T,S> *t = head.load(memory_order_seq_cst);
-        if(t->used >= t->size/2)
+        if(t->used >= (3*t->size)/4)
             resize(true);
         return resp;
     }
@@ -111,7 +111,7 @@ public:
     bool remove(T key, S value) {
         bool resp = apply(REM, key, value);
         HNode<T,S> *t = head.load(memory_order_seq_cst);
-        if(t->used < t->size/2)
+        if(t->used < t->size/4)
             resize(false);
         return resp;
     }
@@ -121,7 +121,7 @@ public:
         FSet<T,S> *curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);
         if(!curr_bucket) {
             HNode<T,S> *prev_node = t->pred;
-            if(!prev_node)
+            if(prev_node)
                 curr_bucket = prev_node->buckets[key % prev_node->size].load(memory_order_seq_cst);
             else
                 curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);

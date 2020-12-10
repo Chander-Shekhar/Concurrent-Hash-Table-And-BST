@@ -42,14 +42,17 @@ class FSet{
 private:
 	atomic<FSetNode<T,S>*> node;
 public:
-	FSet(unordered_map<T,S> *m_map,bool ok){
+	FSet(unordered_map<T,S> *m_map, bool ok){
 		FSetNode<T,S> *p=new FSetNode<T,S>(m_map,ok);
 		node.store(p,memory_order_seq_cst);
 	}
+
 	unordered_map<T,S>* freeze(){
 		FSetNode<T,S>* o = node.load(memory_order_seq_cst);
+		unordered_map<T,S> *new_map = new unordered_map<T,S>();
 		while(o->ok){
-			FSetNode<T,S> *n= new FSetNode<T,S>(o->map,false);
+			*new_map = *o->map;
+			FSetNode<T,S> *n= new FSetNode<T,S>(new_map,false);
 			if(node.compare_exchange_strong(o,n))
 				break;
 			o=node.load(memory_order_seq_cst);
@@ -59,21 +62,22 @@ public:
 
 	bool invoke(FSetOP<T,S>* op){
 		FSetNode<T,S>* o = node.load(memory_order_seq_cst);
+
 		while(o->ok){
-			unordered_map<T,S> map;
+			unordered_map<T,S> *map = new unordered_map<T,S>();
 			int resp;
 			if(op->type==INS){
 				if(o->map->find(op->key)==o->map->end()){
-					map=*(o->map);
-					map[op->key]=op->value;
+					*map=*(o->map);
+					(*map)[op->key]=op->value;
 					resp=1;
 				}
 				else{
 					if(op->value==o->map->at(op->key))
 						resp=0;
 					else{
-						map=*(o->map);
-						map[op->key]=op->value;
+						*map=*(o->map);
+						(*map)[op->key]=op->value;
 						resp=2;
 					}
 				}
@@ -86,7 +90,7 @@ public:
 					resp=1;
 				}
 			}
-			FSetNode<T,S>* n=new FSetNode<T,S>(&map,true);
+			FSetNode<T,S>* n=new FSetNode<T,S>(map,true);
 			if(node.compare_exchange_strong(o,n)){
 				op->resp=resp;
 				return true;

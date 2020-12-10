@@ -79,6 +79,7 @@ int main()
 	// input>>N>>M>>L1;
 	thread th[N];
 	runner * runPtr= new runner(N,M,L1);
+	cout << N << endl;
 	for(int i=0;i<N;i++)
 	{
 		th[i]=thread(&runner::proc, runPtr,i);
