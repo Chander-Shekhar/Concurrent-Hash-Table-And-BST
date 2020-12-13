@@ -119,10 +119,8 @@ public:
         int size=t->size;
         if(size >= 3){
             int a=rand()%size;
-            int b=rand()%size;
-            while(a==b){
-                b=rand()%size;
-            }
+            int b=(rand()%size+a)%size;
+            
             if(t->buckets[a].load(memory_order_seq_cst)->getHead()->map->size() <=5 & t->buckets[b].load(memory_order_seq_cst)->getHead()->map->size()<=5)
                 resize(false);
         }
