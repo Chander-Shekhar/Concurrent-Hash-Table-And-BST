@@ -30,12 +30,12 @@ public:
 	void proc(int id){
 		default_random_engine generator1,generator2,generator3;
 		exponential_distribution<float> dis1(1.0/L1);
-        bernoulli_distribution dist2(0.9);
+        bernoulli_distribution dist2(0.1);
         bernoulli_distribution dist3(0.7); 
 		for(int i=0;i<M;i++){
 		auto start = chrono::system_clock::now();
 		time_t reqEnterTime = chrono::system_clock::to_time_t(start);
-		fprintf(File_Filter,"%dth CS request to Hash at %s by thread %d\n",i+1,getTimeinhr(reqEnterTime).c_str(),id+1);
+		// fprintf(File_Filter,"%dth CS request to Hash at %s by thread %d\n",i+1,getTimeinhr(reqEnterTime).c_str(),id+1);
 		// File << i+1 <<"th CS Entry Request at "<<getTimeinhr(reqEnterTime)<<" by thread "<<id+1<<" (mesg 1)"<<endl;
 
         if(dist2(generator2)){
@@ -52,9 +52,9 @@ public:
 		auto elapsed=chrono::duration_cast<chrono::microseconds>(end - start);
 		waiting_time += elapsed.count();
 		// max_waiting_writers=max(max_waiting_writers,elapsed.count());
-		fprintf(File_Filter,"%dth complete in hash at %s by thread %d\n",i+1,getTimeinhr(actEnterTime).c_str(),id+1);
+		// fprintf(File_Filter,"%dth complete in hash at %s by thread %d\n",i+1,getTimeinhr(actEnterTime).c_str(),id+1);
 		// File << i+1 <<"th CS Entry at "<<getTimeinhr(reqEnterTime)<<" by thread "<<id+1<<" (mesg 2)"<<endl;
-		usleep(dis1(generator1)*1000);
+		// usleep(dis1(generator1)*1000);
 		}
 	}
 	string getTimeinhr(time_t inp_time)
@@ -75,7 +75,7 @@ int main()
 {
 	// ifstream input;
 	// input.open("inp-params.txt");//get inputs from file
-	int N=16,M=20,L1=5;
+	int N=128,M=5000,L1=5;
 	// input>>N>>M>>L1;
 	thread th[N];
 	runner * runPtr= new runner(N,M,L1);
@@ -89,7 +89,7 @@ int main()
 		th[i].join();
 	}
 	
-    printf("Average wait time to enter for Hash-table is %ld\n",runPtr->waiting_time/(N*M));
+    printf("Average wait time to enter for Hash-table is %ld microseconds\n",runPtr->waiting_time/(N*M));
     // printf("Average wait time to exit for MCS lock is %ld\n",runPtr->waiting_time_exit/(N*M));
 	return 0;
 }
