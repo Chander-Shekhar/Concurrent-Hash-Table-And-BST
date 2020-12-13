@@ -39,7 +39,7 @@ public:
 		// File << i+1 <<"th CS Entry Request at "<<getTimeinhr(reqEnterTime)<<" by thread "<<id+1<<" (mesg 1)"<<endl;
 
         if(dist2(generator2)){
-            if(dist2(generator3))   
+            if(dist3(generator3))   
                 hash->insert(rand()%100,rand()%100);
             else
                 hash->remove(rand()%100,rand()%100);

@@ -91,7 +91,7 @@ private:
             FSet<T,S> *nil = nullptr;
             t->buckets[i].compare_exchange_strong(nil, b_dash);
         }
-        return t->buckets[i];
+        return t->buckets[i].load(memory_order_seq_cst);
     }
 public:
     HashTable() {
