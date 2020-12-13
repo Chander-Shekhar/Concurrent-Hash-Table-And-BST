@@ -39,8 +39,12 @@ private:
             FSet<T,S> *curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);
             if(!curr_bucket) {
                 curr_bucket = initBucket(t, (key % t->size));
-                if(type == INS)
+                if(type == INS){
                     t->used++;
+                    if(curr_bucket->getHead()->map->size()>=20){
+                        resize(true);
+                    }
+                }
             }
             else if(type == REM and curr_bucket->getHead()->map->size() == 1)
                 t->used--;
@@ -102,17 +106,26 @@ public:
 
     bool insert(T key, S value) {
         bool resp = apply(INS, key, value);
-        HNode<T,S> *t = head.load(memory_order_seq_cst);
-        if(t->used >= (3*t->size)/4)
-            resize(true);
+        
+        // HNode<T,S> *t = head.load(memory_order_seq_cst);
+        // if(t->used >= (3*t->size)/4)
+        //     resize(true);
         return resp;
     }
 
     bool remove(T key, S value) {
         bool resp = apply(REM, key, value);
         HNode<T,S> *t = head.load(memory_order_seq_cst);
-        if(t->used < t->size/4)
-            resize(false);
+        int size=t->size;
+        if(size >= 3){
+            int a=rand()%size;
+            int b=rand()%size;
+            while(a==b){
+                b=rand()%size;
+            }
+            if(t->buckets[a].load(memory_order_seq_cst)->getHead()->map->size() <=5 & t->buckets[b].load(memory_order_seq_cst)->getHead()->map->size()<=5)
+                resize(false);
+        }
         return resp;
     }
 
