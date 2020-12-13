@@ -86,7 +86,8 @@ public:
 				if(o->map->find(op->key)==o->map->end())
 					resp=0;
 				else{
-					o->map->erase(op->key);
+					*map=*(o->map);
+					map->erase(op->key);
 					resp=1;
 				}
 			}

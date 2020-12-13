@@ -75,7 +75,7 @@ int main()
 {
 	// ifstream input;
 	// input.open("inp-params.txt");//get inputs from file
-	int N=128,M=5000,L1=5;
+	int N=128,M=2000,L1=5;
 	// input>>N>>M>>L1;
 	thread th[N];
 	runner * runPtr= new runner(N,M,L1);
