@@ -19,7 +19,7 @@ public:
 	    L1=l1;
 	    File_Filter = fopen("CLH-Lock.txt","w");
 	    // File.open("Hash-table.txt");
-	    hash=new HashTable<int,int>();
+	    hash=new HashTable<int>();
 		waiting_time=vector<time_t>(n);
 		// cout<<N<<"\t"<<M<<endl;
 	}
@@ -42,9 +42,9 @@ public:
 
 			if(dist2(generator2)){
 				if(dist3(generator3))   
-					hash->insert(rand()%100,rand()%100);
+					hash->insert(rand()%100);
 				else
-					hash->remove(rand()%100,rand()%100);
+					hash->remove(rand()%100);
 			}
 			else{
 				hash->contains(rand()%100);
@@ -69,7 +69,7 @@ public:
 		return out_time;
 	}
 private:
-	HashTable<int,int> *hash;
+	HashTable<int> *hash;
 	FILE * File_Filter;
 	ofstream File;
 	int N,M,L1;

@@ -4,14 +4,14 @@
 #include "FSet.h"
 using namespace std;
 
-template<typename T,typename S>
+template<typename T>
 class HNode{
 public:
-    atomic<FSet<T,S>*> *buckets;
+    atomic<FSet<T>*> *buckets;
     int size, used;
-    HNode<T,S> *pred;
-    HNode(int capacity, HNode<T,S> *pred) {
-        buckets = new atomic<FSet<T,S>*>[capacity];
+    HNode<T> *pred;
+    HNode(int capacity, HNode<T> *pred) {
+        buckets = new atomic<FSet<T>*>[capacity];
         for(int i=0;i<capacity;i++)
             buckets[i].store(nullptr);
         size = capacity;
@@ -27,16 +27,16 @@ public:
     // }
 };
 
-template<typename T,typename S>
+template<typename T>
 class HashTable {
 private:
-    atomic<HNode<T,S>*> head;
+    atomic<HNode<T>*> head;
 
-    bool apply(OPType type, T key, S value) {
-        FSetOP<T,S> *op = new FSetOP<T,S>(type, key, value);
+    bool apply(OPType type, T key) {
+        FSetOP<T> *op = new FSetOP<T>(type, key);
         while(true) {
-            HNode<T,S> *t = head.load(memory_order_seq_cst);
-            FSet<T,S> *curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);
+            HNode<T> *t = head.load(memory_order_seq_cst);
+            FSet<T> *curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);
             if(!curr_bucket) {
                 curr_bucket = initBucket(t, (key % t->size));
                 if(type == INS){
@@ -54,7 +54,7 @@ private:
     }
 
     void resize(bool grow) {
-        HNode<T,S> *t = head.load(memory_order_seq_cst);
+        HNode<T> *t = head.load(memory_order_seq_cst);
         if(t->size <= 1 and !grow)
             return ;
         for(int i=0;i<t->size;i++)
@@ -62,37 +62,37 @@ private:
         t->pred = nullptr;
         int size = grow ? t->size*2 :t->size/2;
         // atomic<FSet<T,S>*> *buckets = new atomic<FSet<T,S>*>[size];
-        HNode<T,S> *t_dash = new HNode<T,S>(size, t);
+        HNode<T> *t_dash = new HNode<T>(size, t);
         // Confused if it should be in a loop
         head.compare_exchange_strong(t, t_dash);
     }
 
-    FSet<T,S> *initBucket(HNode<T,S> *t, int i) {
-        FSet<T,S> *b = t->buckets[i].load(memory_order_seq_cst);
-        FSet<T,S> *m;
-        HNode<T,S> *s = t->pred;
+    FSet<T> *initBucket(HNode<T> *t, int i) {
+        FSet<T> *b = t->buckets[i].load(memory_order_seq_cst);
+        FSet<T> *m;
+        HNode<T> *s = t->pred;
         if(!b and s) {
-            unordered_map<T,S> *new_set = new unordered_map<T,S>();
+            llvm::SmallSet <T , 30> *new_set = new llvm::SmallSet <T , 30>();
             if(t->size == s->size*2) {
                 m = s->buckets[i % s->size].load(memory_order_seq_cst);
-                unordered_map<T,S> set_1 = *m->freeze();
+                llvm::SmallSet <T , 30> set_1 = *m->freeze();
                 for(auto itr : set_1) {
-                    if(itr.first % t->size == i)
+                    if(itr % t->size == i)
                         new_set->insert(itr);
                 }
             }
             else {
                 m = s->buckets[i];
-                FSet<T,S> *n = s->buckets[i+t->size];
-                unordered_map<T,S> set_1 = *m->freeze(), set_2 = *n->freeze(); 
+                FSet<T> *n = s->buckets[i+t->size];
+                llvm::SmallSet <T , 30>set_1 = *m->freeze(), set_2 = *n->freeze(); 
                 for(auto itr : set_1)
                     new_set->insert(itr);
                 for(auto itr : set_2)
                     new_set->insert(itr);
             }
-            FSet<T,S> *b_dash = new FSet<T,S>(new_set, true);
+            FSet<T> *b_dash = new FSet<T>(new_set, true);
             // Confused if it should be in a loop
-            FSet<T,S> *nil = nullptr;
+            FSet<T> *nil = nullptr;
             t->buckets[i].compare_exchange_strong(nil, b_dash);
         }
         return t->buckets[i].load(memory_order_seq_cst);
@@ -100,12 +100,12 @@ private:
 public:
     HashTable() {
         // atomic<FSet<T,S>*> init = new atomic<FSet<T,S>*>[1];
-        head.store(new HNode<T,S>(1, nullptr));
-        head.load(memory_order_seq_cst)->buckets[0].store(new FSet<T,S>(new unordered_map<T,S>(), true));
+        head.store(new HNode<T>(1, nullptr));
+        head.load(memory_order_seq_cst)->buckets[0].store(new FSet<T>(new llvm::SmallSet <T , 30>(), true));
     }
 
-    bool insert(T key, S value) {
-        bool resp = apply(INS, key, value);
+    bool insert(T key) {
+        bool resp = apply(INS, key);
         
         // HNode<T,S> *t = head.load(memory_order_seq_cst);
         // if(t->used >= (3*t->size)/4)
@@ -113,9 +113,9 @@ public:
         return resp;
     }
 
-    bool remove(T key, S value) {
-        bool resp = apply(REM, key, value);
-        HNode<T,S> *t = head.load(memory_order_seq_cst);
+    bool remove(T key) {
+        bool resp = apply(REM, key);
+        HNode<T> *t = head.load(memory_order_seq_cst);
         int size=t->size;
         if(size >= 3){
             int a=rand()%size;
@@ -128,10 +128,10 @@ public:
     }
 
     bool contains(T key) {
-        HNode<T,S> *t = head.load(memory_order_seq_cst);
-        FSet<T,S> *curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);
+        HNode<T> *t = head.load(memory_order_seq_cst);
+        FSet<T> *curr_bucket = t->buckets[key % t->size].load(memory_order_seq_cst);
         if(!curr_bucket) {
-            HNode<T,S> *prev_node = t->pred;
+            HNode<T> *prev_node = t->pred;
             if(prev_node)
                 curr_bucket = prev_node->buckets[key % prev_node->size].load(memory_order_seq_cst);
             else
