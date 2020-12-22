@@ -184,7 +184,7 @@ int find(int k, Node*& pred, Operation*& predOp, Node*& curr, Operation*& currOp
     next = curr->right;
     lastRight = curr;
     lastRightOp = currOp;
-    while (!ISNULL(next) && next != NULL) {
+    while (!ISNULL(next) ) {
         pred = curr;
         predOp = currOp;
         curr = next;
