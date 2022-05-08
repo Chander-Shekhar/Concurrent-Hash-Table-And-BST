@@ -1,2 +1,2 @@
-# Concurrent-Hash-Table
-Implementation of Dynamic-Sized Nonblocking Hash Tables in C++
+# Concurrent Hash Table and BST 
+Implementation of Dynamic-Sized Nonblocking Hash Tables and BST in C++
